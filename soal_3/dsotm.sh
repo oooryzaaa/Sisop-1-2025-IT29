@@ -1,47 +1,33 @@
 #!/bin/bash
-
 clear
-
-
+# Parse argument
 TRACK=""
 for arg in "$@"; do
-    if [[ "$arg" == --play=* ]]; then
+    if [[ "$arg" == "--play="* ]]; then
         TRACK="${arg#*=}"
+        TRACK="${TRACK//[\"\'/}"
+        break
     fi
 done
 
-# Fungsi  'Speak to Me'
+# Fungsi-fungsi utama
 speak_to_me() {
     while true; do
-        affirmation=$(curl -s https://www.affirmations.dev/ | jq -r '.affirmation')
-        echo "$affirmation"
+        curl -s "https://www.affirmations.dev" | jq -r '.affirmation'
         sleep 1
-        
     done
 }
 
-# Fungsi  'On the Run'
 on_the_run() {
-    while true; do
-        progress=0
-        while [ $progress -le 100 ]; do
-            cols=$(tput cols)
-            bar_width=$((cols - 7))
-            filled=$(( (progress * bar_width) / 100 ))
-            unfilled=$(( bar_width - filled ))
-            printf "["
-            printf "%${filled}s" | tr ' ' '='
-            printf "%${unfilled}s" | tr ' ' ' '
-            printf "] %3d%%" "$progress"
-            sleep_time=$(awk -v min=0.1 -v max=1.0 'BEGIN{srand(); print min+rand()*(max-min)}')
-            sleep "$sleep_time"
-            printf "\r"
-            progress=$((progress + 1))
-        done
+    cols=$(($(tput cols) - 7))  
+    for i in {1..100}; do
+        filled=$((i * cols / 100))
+        printf "\r[%-${cols}s] %3d%%" "$(printf '%*s' $filled | tr ' ' '=')" "$i"
+        sleep "0.$((RANDOM%9+1))"  
     done
+    echo
 }
 
-# Fungsi 'Time'
 time_func() {
     while true; do
         printf "\r%s" "$(date +'%Y-%m-%d %H:%M:%S')"
@@ -49,74 +35,38 @@ time_func() {
     done
 }
 
-# Fungsi 'Money'
-money_func() {
-    symbols=('$' '€' '£' '¥' '¢' '₹' '₩' '₿' '₣' '¤')
-    echo -ne "\e[32m"  
-    echo -ne "\e[?25l"  
-    trap 'echo -ne "\e[0m\e[?25h"; clear' EXIT
-    cols=$(tput cols)
-    lines=$(tput lines)
-    declare -A matrix
-    for ((i=1; i<=lines; i++)); do
-        for ((j=1; j<=cols; j++)); do
-            matrix[$i,$j]=" "
-        done
-    done
+
+
+money() {
+    chars=('$' '€' '£' '¥' '¢' '₹' '₩' '₿' '₣')
     while true; do
-        
-        for ((j=1; j<=cols; j++)); do
-            if (( RANDOM % 50 == 0 )); then
-                matrix[1,$j]=${symbols[$((RANDOM % ${#symbols[@]}))]}
-            fi
-        done
-        
-        for ((i=lines; i>1; i--)); do
-            for ((j=1; j<=cols; j++)); do
-                matrix[$i,$j]=${matrix[$((i-1)),$j]}
-            done
-        done
-        for ((j=1; j<=cols; j++)); do
-            matrix[1,$j]=" "
-        done
-    
-        clear
-        for ((i=1; i<=lines; i++)); do
-            line=""
-            for ((j=1; j<=cols; j++)); do
-                line+=${matrix[$i,$j]}
-            done
-            echo "$line"
-        done
-        sleep 0.1
-    done
+        cols=$(tput cols)
+        rows=$(tput lines)
+        col=$((RANDOM % cols))
+        row=$((RANDOM % rows))
+        tput cup $row $col
+        echo -ne "\e[1;32m${chars[$RANDOM % 9]}\e[0m"
+        sleep 0.05   
+done
 }
 
-# Fungsi  'Brain Damage'
 brain_damage() {
     top -b -d 1
 }
 
-# Memilih fungsi berdasarkan track
 case "$TRACK" in
-    "Speak to Me")
-        speak_to_me
-        ;;
-    "On the Run")
-        on_the_run
-        ;;
-    "Time")
-        time_func
-        ;;
-    "Money")
-        money_func
-        ;;
-    "Brain Damage")
-        brain_damage
-        ;;
+    "Speak to Me")  speak_to_me ;;
+    "On the Run")   on_the_run ;;
+    "Time")         time_func ;;
+    "Money")        money ;;
+    "Brain Damage") brain_damage ;;
     *)
-        echo "Track tidak valid: $TRACK"
-        echo "Pilihan track: 'Speak to Me', 'On the Run', 'Time', 'Money', 'Brain Damage'"
-        exit 1
+        echo -e "Usage: ./dsotm.sh --play=\"Track Name\""
+        echo -e "Tracks Available: "
+        echo "• Speak to Me"
+        echo "• On the Run"
+        echo "• Time"
+        echo "• Money"
+        echo "• Brain Damage"
         ;;
 esac
