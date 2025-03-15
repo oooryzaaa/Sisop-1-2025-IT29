@@ -2,7 +2,7 @@
 
 clear
 
-# Parsing command line argument
+
 TRACK=""
 for arg in "$@"; do
     if [[ "$arg" == --play=* ]]; then
@@ -10,7 +10,7 @@ for arg in "$@"; do
     fi
 done
 
-# Fungsi untuk 'Speak to Me'
+# Fungsi  'Speak to Me'
 speak_to_me() {
     while true; do
         affirmation=$(curl -s https://www.affirmations.dev/ | jq -r '.affirmation')
@@ -20,7 +20,7 @@ speak_to_me() {
     done
 }
 
-# Fungsi untuk 'On the Run'
+# Fungsi  'On the Run'
 on_the_run() {
     while true; do
         progress=0
@@ -41,7 +41,7 @@ on_the_run() {
     done
 }
 
-# Fungsi untuk 'Time'
+# Fungsi 'Time'
 time_func() {
     while true; do
         printf "\r%s" "$(date +'%Y-%m-%d %H:%M:%S')"
@@ -49,11 +49,11 @@ time_func() {
     done
 }
 
-# Fungsi untuk 'Money'
+# Fungsi 'Money'
 money_func() {
     symbols=('$' '€' '£' '¥' '¢' '₹' '₩' '₿' '₣' '¤')
-    echo -ne "\e[32m"  # Warna hijau
-    echo -ne "\e[?25l"  # Sembunyikan kursor
+    echo -ne "\e[32m"  
+    echo -ne "\e[?25l"  
     trap 'echo -ne "\e[0m\e[?25h"; clear' EXIT
     cols=$(tput cols)
     lines=$(tput lines)
@@ -64,23 +64,22 @@ money_func() {
         done
     done
     while true; do
-        # Generate new drops
+        
         for ((j=1; j<=cols; j++)); do
             if (( RANDOM % 50 == 0 )); then
                 matrix[1,$j]=${symbols[$((RANDOM % ${#symbols[@]}))]}
             fi
         done
-        # Geser semua baris ke bawah
+        
         for ((i=lines; i>1; i--)); do
             for ((j=1; j<=cols; j++)); do
                 matrix[$i,$j]=${matrix[$((i-1)),$j]}
             done
         done
-        # Bersihkan baris atas
         for ((j=1; j<=cols; j++)); do
             matrix[1,$j]=" "
         done
-        # Tampilkan matrix
+    
         clear
         for ((i=1; i<=lines; i++)); do
             line=""
@@ -93,7 +92,7 @@ money_func() {
     done
 }
 
-# Fungsi untuk 'Brain Damage'
+# Fungsi  'Brain Damage'
 brain_damage() {
     top -b -d 1
 }
