@@ -120,7 +120,61 @@ detik sampai 1 detik).
 
 
 # Penjelasan
-Soal 1
-  
+### Soal 1
 
+a. Menghitung jumlah baris di tablet ajaib yang menunjukkan buku-buku yang dibaca oleh Chris Hemsworth.
+```
+awk -F ',' 'NR > 1 && $2 == "Chris Hemsworth" {count++} END {print "Chris Hemsworth membaca", count, "buku."}' reading_data.csv
+```
+Command ini melangkahi baris header dengan `NR > 1` dan menghitung (menjumlah) baris pada kolom 2 yang mengandung 'Chris Hemsworth' sebagai total banyak 'Chris Hemsworth' membaca buku. 
+
+b. Menghitung rata-rata durasi membaca untuk buku-buku yang dibaca menggunakan “Tablet”.
+```
+awk -F ',' 'NR > 1 && $8 == "Tablet" {sum += $6; count++} END {if (count > 0) print sum/count; else print "0" }' reading_data.csv
+```
+ Line `$8 == "Tablet" {sum += $6; count++}` akan menghitung berapa baris 'Tablet' muncul dan menjumlahkan kolom 6 sebagai jumlah durasi membaca.
+ Line `{if (count > 0)` print sum/count apabila didapatkan data hitungan 'Tablet' > 0 maka akan dihitung rata - rata durasi membaca menggunakan Tablet.
+
+c. Mencari siapa yang memberikan rating tertinggi untuk buku yang dibaca beserta nama dan judul bukunya. 
+
+```
+awk -F ',' 'NR > 1 {if ($7 > max) {max = $7; name = $2; book = $3}} END {print name, "-", book, "-", max}' reading_data.csv
+```
+Line `{if ($7 > max) {max = $7; name = $2; book = $3}}` membandingkan jika ada nilai kolom 7 (rating) dengan nilai max, jika memenuhi maka nilai max akan diisi dengan nilai rating tertinggi diikuti pembaca dan judul buku.
+
+d. Mencari genre yang paling sering dibaca di Asia setelah 31 Desember 2023 beserta dengan jumlahnya.
+
+```
+awk -F',' '$9=="Asia" && $5>"2023-12-31" {count[$4]++} END {max = 0; for (genre in count) {if (count[genre] > max) {max = count[genre]; popular = genre}} print popular, max}' reading_data.csv
+```
+Line `'$9=="Asia" && $5>"2023-12-31" {count[$4]++}` dengan mengecek apakah kolom 9 ada 'Asia' kemudian mengfilter kolom 5 dengan jangka waktu setelah tahun 2023, kemudian dengan kriteria 'Asia' dan jangka waktu setelah 2023 akan dihitung jumlah pada masing - masing genre.
+Jika pada hitungan genre paling banyak melebihi nilai max maka akan di print popular genre beserta jumlahnya.
+
+Lalu digabung menjadi satu script
+```bash
+#!/bin/bash
+
+#Banyak Chris Hemsworth membaca buku 
+jumlah_chris=$(awk -F ',' 'NR > 1 && $2 == "Chris Hemsworth" {count++} END {print "Chris Hemsworth membaca", count, "buku."}' reading_data.csv)
+
+#Rata - rata durasi membaca dengan tablet
+rata_rata=$(awk -F ',' 'NR > 1 && $8 == "Tablet" {sum += $6; count++} END {if (count > 0) print sum/count; else print "0" }' reading_data.csv)
+
+#Rating tertinggi pembaca
+rating_tertinggi=$(awk -F ',' 'NR > 1 {if ($7 > max) {max = $7; name = $2; book = $3}} END {print name, "-", book, "-", max}' reading_data.csv)
+
+#Genre populer setelah tahun 2023
+genre_popular=$(awk -F',' '$9=="Asia" && $5>"2023-12-31" {count[$4]++} END {max = 0; for (genre in count) {if (count[genre] > max) {max = count[genre]; popular = genre}} print popular, max}' reading_data.csv)
+
+#Print results
+echo "$jumlah_chris"
+echo "Rata - rata durasi membaca dengan Tablet adalah $rata_rata menit."
+echo "Pembaca dengan rating tertinggi : $rating_tertinggi"
+echo "Genre paling popoler di Asia setelah tahun 2023 adalah $genre_popular"
+```
+![image](https://github.com/user-attachments/assets/c75e71d7-97b3-48bc-b4b5-26fda0a86477)
+
+### Soal 2
+### Soal 3
+### Soal 4
 
