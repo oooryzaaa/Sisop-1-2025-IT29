@@ -119,7 +119,8 @@ detik sampai 1 detik).
  Diberikan kebebasan artistik, tidak harus sama persis dengan tampilan pada gif, tetapi untuk fungsionalitas, data harus sesuai dengan ps/top dan sejenisnya.
 
 
-- Jawaban :
+# Penjelasan
+Soal 1
   
 
 
