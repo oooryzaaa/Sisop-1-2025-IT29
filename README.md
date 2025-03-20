@@ -410,4 +410,103 @@ Untuk memberikan petunjuk yang baik pada pengguna program, anda berpikir untuk m
 
 ![image](https://github.com/user-attachments/assets/61fb9f9c-b30c-4049-8f8a-4c9bf9455b01)
 
+### Revisi Soal 4
+A. Penyortiran salah sehingga perlu diganti.
+kode sebelumnya:
+```
+show_info() {
+    file=$1
+    echo "Summary of $(basename $file)"
+    
+    # Mencari highest adjusted usage
+    max_usage=$(awk -F, 'NR>1 {gsub(/%/,"",$2); if($2+0 > max) {max=$2; pokemon=$1}} END {printf "%s with %.4f%%", pokemon, max}' $file)
+    
+    # Mencari highest raw usage
+    max_raw=$(awk -F, 'NR>1 {if($3+0 > max) {max=$3; pokemon=$1}} END {printf "%s with %d uses", pokemon, max}' $file)
+    
+    echo "Highest Adjusted Usage: $max_usage"
+    echo "Highest Raw Usage:     $max_raw"
+}
+```
+diubah menjadi:
+```
+show_summary() {
+    awk -F, 'NR > 1 {
+        if ($2 + 0 > max_usage + 0) {
+            max_usage = $2
+            pokemon_usage = $1
+        }
+        if ($3 + 0 > max_raw + 0) {
+            max_raw = $3
+            pokemon_raw = $1
+        }
+    } END {
+        printf "Summary of %s\n", ARGV[1]
+        printf "Highest Adjusted Usage: %s with %.4f%%\n", pokemon_usage, max_usage
+        printf "Highest Raw Usage: %s with %d uses\n", pokemon_raw, max_raw
+    }' "$1"
+}
+```
+sehingga menghasilkan output sebagai berikut ketika script dijalankan menggunakan command `./pokemon_analysis.sh pokemon_usage.csv --info`
 
+![image](https://github.com/user-attachments/assets/a7325071-b107-4042-9354-3edac05ee3f6)
+
+C. Pokemon yang dimunculkan hanya yang namanya sama persis saja, tidak semua pokemon yang meiliki unsur nama tersebut.
+kode sebelumnya:
+```
+search_pokemon() {
+    file=$1
+    pattern=$2
+    
+    # Case-insensitive exact match
+    result=$(awk -F, -v pat="$pattern" 'NR>1 && tolower($1) == tolower(pat)' $file)
+    
+    if [[ -z $result ]]; then
+        echo "No Pokemon found matching '$pattern'"
+        exit 0
+    fi
+    
+    # Header + result sorted by usage
+    head -1 $file
+    echo "$result" | sort -t, -k2,2nr
+}
+```
+diubah menjadi:
+```
+grep_pokemon() {
+    awk -F, -v name="$2" 'NR == 1 || tolower($1) ~ tolower(name)' "$1" | sort -t, -k2,2nr
+}
+```
+sehingga akan menampilkan semua pokemon jika pada namanya terdapat unsur tertentu. hasil menjalankan script tersebut dengan test case pokemon Ogerpon dengan command `./pokemon_analysis.sh pokemon_usage.csv --grep ogerpon`, sehingga menghasilkan keluaran sebagai berikut.
+
+![image](https://github.com/user-attachments/assets/b1cb4642-15f8-49a0-af03-f3da98fd6f34)
+
+D. Fungsi Filter tidak berfungsi.
+kode sebelumnya:
+```
+filter_type() {
+    file=$1
+    type=$2
+    
+    # Cari di Type1 atau Type2 (case-insensitive)
+    result=$(awk -F, -v typ="$type" 'NR>1 && (tolower($4) == tolower(typ) || (tolower($5) == tolower(typ))' $file)
+    
+    if [[ -z $result ]]; then
+        echo "No Pokemon found with type '$type'"
+        exit 0
+    fi
+    
+    # Header + result sorted by usage
+    head -1 $file
+    echo "$result" | sort -t, -k2,2nr
+}
+```
+diubah menjadi:
+```
+filter_type() {
+    awk -F, -v type="$2" 'NR == 1 || tolower($4) == tolower(type) || tolower($5) == tolower(type)' "$1" | sort -t, -k2,2nr
+}
+```
+fungsi tersebut sudah bisa melakukan filter terhadap type pokemon tertentu. berikut ini merupakan hasil keluaran dari fungsi filter dengan type Dark menggunakan command `./pokemon_analysis.sh pokemon_usage.csv --filter dark`.
+
+![image](https://github.com/user-attachments/assets/595823d4-cbf7-4467-8b56-481850b44ec8)
