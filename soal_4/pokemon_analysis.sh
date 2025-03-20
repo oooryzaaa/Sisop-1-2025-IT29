@@ -38,18 +38,21 @@ handle_error() {
 }
 
 # Fungsi utama untuk summary
-show_info() {
-    file=$1
-    echo "Summary of $(basename $file)"
-    
-    # Mencari highest adjusted usage
-    max_usage=$(awk -F, 'NR>1 {gsub(/%/,"",$2); if($2+0 > max) {max=$2; pokemon=$1}} END {printf "%s with %.4f%%", pokemon, max}' $file)
-    
-    # Mencari highest raw usage
-    max_raw=$(awk -F, 'NR>1 {if($3+0 > max) {max=$3; pokemon=$1}} END {printf "%s with %d uses", pokemon, max}' $file)
-    
-    echo "Highest Adjusted Usage: $max_usage"
-    echo "Highest Raw Usage:     $max_raw"
+show_summary() {
+    awk -F, 'NR > 1 {
+        if ($2 + 0 > max_usage + 0) {
+            max_usage = $2
+            pokemon_usage = $1
+        }
+        if ($3 + 0 > max_raw + 0) {
+            max_raw = $3
+            pokemon_raw = $1
+        }
+    } END {
+        printf "Summary of %s\n", ARGV[1]
+        printf "Highest Adjusted Usage: %s with %.4f%%\n", pokemon_usage, max_usage
+        printf "Highest Raw Usage: %s with %d uses\n", pokemon_raw, max_raw
+    }' "$1"
 }
 
 # Fungsi sorting
@@ -81,41 +84,14 @@ sort_data() {
 }
 
 # Fungsi search
-search_pokemon() {
-    file=$1
-    pattern=$2
-    
-    # Case-insensitive exact match
-    result=$(awk -F, -v pat="$pattern" 'NR>1 && tolower($1) == tolower(pat)' $file)
-    
-    if [[ -z $result ]]; then
-        echo "No Pokemon found matching '$pattern'"
-        exit 0
-    fi
-    
-    # Header + result sorted by usage
-    head -1 $file
-    echo "$result" | sort -t, -k2,2nr
+grep_pokemon() {
+    awk -F, -v name="$2" 'NR == 1 || tolower($1) ~ tolower(name)' "$1" | sort -t, -k2,2nr
 }
 
 # Fungsi filter type
 filter_type() {
-    file=$1
-    type=$2
-    
-    # Cari di Type1 atau Type2 (case-insensitive)
-    result=$(awk -F, -v typ="$type" 'NR>1 && (tolower($4) == tolower(typ) || (tolower($5) == tolower(typ))' $file)
-    
-    if [[ -z $result ]]; then
-        echo "No Pokemon found with type '$type'"
-        exit 0
-    fi
-    
-    # Header + result sorted by usage
-    head -1 $file
-    echo "$result" | sort -t, -k2,2nr
+    awk -F, -v type="$2" 'NR == 1 || tolower($4) == tolower(type) || tolower($5) == tolower(type)' "$1" | sort -t, -k2,2nr
 }
-
 
 main() {
 
