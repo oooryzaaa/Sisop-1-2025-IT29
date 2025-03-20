@@ -216,5 +216,19 @@ echo "Genre paling popoler di Asia setelah tahun 2023 adalah $genre_popular"
 
 ### Soal 2
 ### Soal 3
+# a. Speak To me
+Merupakan soal yang mengharuskan memanggil API, dapat diselesaikan sebagai berikut :
+```bash
+speak_to_me() {
+    while true; do
+        curl -s "https://www.affirmations.dev" | jq -r '.affirmation'
+        sleep 1
+    done
+}
+```
+Dimana output akan terlihat sebagai berikut : 
+![image](https://github.com/user-attachments/assets/137b0d60-8602-4408-bd82-d6ca5d57931d)
+Words of Affirmations akan terus muncul setiap 1 detik 
+
 ### Soal 4
 
