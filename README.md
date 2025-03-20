@@ -231,4 +231,183 @@ Dimana output akan terlihat sebagai berikut :
 Words of Affirmations akan terus muncul setiap 1 detik 
 
 ### Soal 4
+A. Melihat summary dari data untuk mengetahui Pokemon apa yang sedang membawa teror kepada lingkungan “Generation 9 OverUsed”
+```
+show_info() {
+    file=$1
+    echo "Summary of $(basename $file)"
+    
+    # Mencari highest adjusted usage
+    max_usage=$(awk -F, 'NR>1 {gsub(/%/,"",$2); if($2+0 > max) {max=$2; pokemon=$1}} END {printf "%s with %.4f%%", pokemon, max}' $file)
+    
+    # Mencari highest raw usage
+    max_raw=$(awk -F, 'NR>1 {if($3+0 > max) {max=$3; pokemon=$1}} END {printf "%s with %d uses", pokemon, max}' $file)
+    
+    echo "Highest Adjusted Usage: $max_usage"
+    echo "Highest Raw Usage:     $max_raw"
+}
+```
+kode tersebut menggunakan konsep awk untuk mennyortir pokemon dengan adjusted usage atau raw usage tertinggi. pada bagian `'NR>1` berfungsi untuk menghilangkan header, kode `{gsub(/%/,"",$2)` berfungsi untuk menghilangkan tanda '%' pada kolom adjusted usage sehingga memudahkan dalam prosesnya. terakhir `if($2+0 > max) {max=$2; pokemon=$1}} END {printf "%s with %.4f%%", pokemon, max}' $file)` berfungsi untuk mencari nilai tertinggi dari kolom Adjusted usage. dan disimpan pada max_usage.
+
+pada baris kode `max_raw=$(awk -F, 'NR>1 {if($3+0 > max) {max=$3; pokemon=$1}} END {printf "%s with %d uses", pokemon, max}' $file)` memiliki fungsi yang sama seperti pada bagian sebelumnya tetapi dilakukan pada kolom raw usage.
+
+```
+echo "Highest Adjusted Usage: $max_usage"
+    echo "Highest Raw Usage:     $max_raw"
+```
+kode diatas digunakan untuk menampilkan hasil proses yang telah dilakukan sebelumnya. berikut ini hasil dari menjalankan script tersebut menggunakan `./pokemon_analysis.sh pokemon_usage.csv --info`
+
+![image](https://github.com/user-attachments/assets/e710eb19-fd29-4e68-ac80-d1b273dfb08f)
+
+B. Mengurutkan Pokemon berdasarkan data kolom, Sort dilakukan dengan urutan descending untuk semua angka selain nama, yang diurutkan secara alphabetical.
+```
+sort_data() {
+    file=$1
+    criteria=$2
+    
+    declare -A sort_options=(
+        [usage]="-t, -k2,2nr"
+        [raw]="-t, -k3,3nr"
+        [name]="-t, -k1,1"
+        [hp]="-t, -k6,6nr"
+        [atk]="-t, -k7,7nr"
+        [def]="-t, -k8,8nr"
+        [spatk]="-t, -k9,9nr"
+        [spdef]="-t, -k10,10nr"
+        [speed]="-t, -k11,11nr"
+    )
+    
+    if [[ -z ${sort_options[$criteria]} ]]; then
+        handle_error "sort" "$criteria"
+    fi
+    
+    # Header + sorted data
+    head -1 $file
+    tail -n +2 $file | sort ${sort_options[$criteria]} -o sorted.csv
+    cat sorted.csv
+    rm sorte
+}
+```
+kode diatas digunakan untuk melakukan sorting terhadap kriteria tertentu.
+```
+declare -A sort_options=(
+        [usage]="-t, -k2,2nr"
+        [raw]="-t, -k3,3nr"
+        [name]="-t, -k1,1"
+        [hp]="-t, -k6,6nr"
+        [atk]="-t, -k7,7nr"
+        [def]="-t, -k8,8nr"
+        [spatk]="-t, -k9,9nr"
+        [spdef]="-t, -k10,10nr"
+        [speed]="-t, -k11,11nr"
+```
+kode ini digunakan untuk melakukan deklarasi nama kolom/kriteria yang akan digunakan untuk melakukan sorting nantinya.
+```
+ if [[ -z ${sort_options[$criteria]} ]]; then
+        handle_error "sort" "$criteria"
+```
+bagian ini digunakan untuk melakukan error handling terhadap kriteria sorting yang tidak terdapat pada deklarasi sebelumnya.
+```
+head -1 $file
+    tail -n +2 $file | sort ${sort_options[$criteria]} -o sorted.csv
+    cat sorted.csv
+    rm sorted.csv
+```
+bagian kode tersebut dijalankan ketika sudah lolos dari algoritma error handling sebelumnya. kode ini melakukan sorting terhadap kriteria yang telah ditentukan kemudian disimpan sementara pada file 'sorted.csv'.
+hasil dari kode tersebut dapat dilihat ketika script dijalankan menggunakan command `./pokemon_analysis.sh pokemon_usage.csv --sort [criteria]`
+
+![image](https://github.com/user-attachments/assets/1612b41a-48c1-48a2-98e2-9e02676dcb1c)
+
+C.	Mencari nama Pokemon tertentu
+```
+search_pokemon() {
+    file=$1
+    pattern=$2
+    
+    # Case-insensitive exact match
+    result=$(awk -F, -v pat="$pattern" 'NR>1 && tolower($1) == tolower(pat)' $file)
+    
+    if [[ -z $result ]]; then
+        echo "No Pokemon found matching '$pattern'"
+        exit 0
+    fi
+    
+    # Header + result sorted by usage
+    head -1 $file
+    echo "$result" | sort -t, -k2,2nr
+}
+```
+kode tersebut digunakan untuk mencari nama pokemon tertentu. pada bagian `result=$(awk -F, -v pat="$pattern" 'NR>1 && tolower($1) == tolower(pat)' $file)` dilakukan pencarian terhadap nama yang telah ditentukan sebelumnya. pencarian dilakukan dengan mengubah semua input mejadi lowercase kemudian melakukan pencarian.
+```
+if [[ -z $result ]]; then
+        echo "No Pokemon found matching '$pattern'"
+        exit 0
+```
+jika nama pokemon tersebut tidak ditemukan mana akan memunculkan pesan "No Pokemon found matching".
+```
+head -1 $file
+    echo "$result" | sort -t, -k2,2nr
+```
+jika pokemon ditemukan maka akan mengeluarkan header file dan juga pokemon yang dicari.
+hasil proses script tersebut akan menghasilkan keluaran seperti berikut ini.
+
+![image](https://github.com/user-attachments/assets/ee20f916-9dbb-411f-a103-5c5de0b89ddf)
+
+D.	Mencari Pokemon berdasarkan filter nama type
+```
+filter_type() {
+    file=$1
+    type=$2
+    
+    # Cari di Type1 atau Type2 (case-insensitive)
+    result=$(awk -F, -v typ="$type" 'NR>1 && (tolower($4) == tolower(typ) || (tolower($5) == tolower(typ))' $file)
+    
+    if [[ -z $result ]]; then
+        echo "No Pokemon found with type '$type'"
+        exit 0
+    fi
+    
+    # Header + result sorted by usage
+    head -1 $file
+    echo "$result" | sort -t, -k2,2nr
+}
+```
+kode tersebut melakukan sorting terhadap type pokemon tertentu, sehingga hanya memunculkan list pokemon tertentu dengan type yang dipilih sebelumnya.
+Pada bagian kode `result=$(awk -F, -v typ="$type" 'NR>1 && (tolower($4) == tolower(typ) || (tolower($5) == tolower(typ))' $file)` dilakukan pencarian pada kolom type1 dan type2 dengan cara mengubahnya ke lowercase kemudian melakukan penyocokan pada list pokemon.
+```
+if [[ -z $result ]]; then
+        echo "No Pokemon found with type '$type'"
+        exit 0
+```
+jika tidak ada pokemon dengan tipe yang dipilih maka mengeluarkan pesan "No Pokemon found with type '$type'".
+```
+head -1 $file
+    echo "$result" | sort -t, -k2,2nr
+```
+jika ditemukan maka akan dilist dan akan dimunculkan sehingga menghasilkan list pokemon dengan list tertentu. scrpit tersebut dapat dijalanakan menggunakan command `./pokemon_analysis.sh pokemon_usage.csv --sort [type]`
+
+E.	Error handling
+Pastikan program yang anda buat mengecek semua kesalahan pengguna agar dapat memberikan kejelasan kepada pengguna pada setiap kasus.
+```
+# Error handling
+handle_error() {
+    case $1 in
+        no_file) echo "Error: File '$2' not found"; exit 1;;
+        no_args) echo "Error: Missing arguments"; exit 1;;
+        invalid_cmd) echo "Error: Unknown command '$2'"; exit 1;;
+        filter) echo "Error: No filter option provided"; exit 1;;
+        sort) echo "Error: Invalid sort criteria '$2'"; exit 1;;
+        grep) echo "Error: Missing search pattern"; exit 1;;
+    esac
+}
+```
+kode tersebut merupakan error handling dari kode kode yang terlah dibuat, error-error yang mungkin terjadi seperti file tidak ditemukan, argument tidak lengkap, command yang tidak diketahui, maupun error dari setiap fungsi yang telah dibuat.
+
+F.	Help screen yang menarik
+Untuk memberikan petunjuk yang baik pada pengguna program, anda berpikir untuk membuat sebuah help screen yang muncul ketika mengetik -h atau --help sebagai command yang dijalankan. Kriteria yang harus ada dalam help screen pada program ini adalah:
+* ASCII Art yang menarik! Gunakan kreativitas anda untuk mencari/membuat art yang cocok untuk program yang sudah anda buat!
+* Penjelasan setiap command dan sub-command
+
+![image](https://github.com/user-attachments/assets/61fb9f9c-b30c-4049-8f8a-4c9bf9455b01)
+
 
