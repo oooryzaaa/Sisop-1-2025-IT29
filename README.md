@@ -215,8 +215,10 @@ echo "Genre paling popoler di Asia setelah tahun 2023 adalah $genre_popular"
 ![image](https://github.com/user-attachments/assets/c75e71d7-97b3-48bc-b4b5-26fda0a86477)
 
 ### Soal 2
+   
 ### Soal 3
-# a. Speak To me
+
+### a. Speak To me
 Merupakan soal yang mengharuskan memanggil API, dapat diselesaikan sebagai berikut :
 ```bash
 speak_to_me() {
@@ -228,7 +230,164 @@ speak_to_me() {
 ```
 Dimana output akan terlihat sebagai berikut : 
 ![image](https://github.com/user-attachments/assets/137b0d60-8602-4408-bd82-d6ca5d57931d)
+
 Words of Affirmations akan terus muncul setiap 1 detik 
+
+### b. On the Run
+
+Berupa progress bar yang akan ditampilkan setiap antara 0.1 hingga 1 detik
+```bash
+on_the_run() {
+    cols=$(($(tput cols) - 7))  
+    for i in {1..100}; do
+        filled=$((i * cols / 100))
+        printf "\r[%-${cols}s] %3d%%" "$(printf '%*s' $filled | tr ' ' '=')" "$i"
+        sleep "0.$((RANDOM%9+1))"  
+    done
+    echo
+}
+```
+
+hasilnya adalah berupa progress bar yang direpresentasikan oleh tanda "=" dari awal hingga akhir terminal
+
+![image](https://github.com/user-attachments/assets/2440710c-f921-4bf6-a44b-29da345384f2)
+
+### REVISI 
+
+Berikut adalah revisi untuk penambahan artistik pada function On the Run :
+
+```bash
+on_the_run() {
+    # Progress bar minimalis dengan warna
+    cols=$(($(tput cols) - 10))
+    echo  # Spasi
+    
+    for i in {1..100}; do
+        filled=$((i * cols / 100))
+        printf "\r\e[36m[\e[0m%-${cols}s\e[36m]\e[35m %3d%%\e[0m" \
+               "$(printf '%*s' $filled | tr ' ' '=')" "$i"
+        sleep "0.$((RANDOM%9+1))"
+    done
+    echo
+}
+```
+
+Output penambahan warna dari progress bar :
+
+![image](https://github.com/user-attachments/assets/be5149f1-c3bd-4ebf-8722-6bfa6295dcc3)
+
+### c. Time
+
+Sederhananya, soal ini mengharuskan praktikan untuk melakukan display waktu pada terminal
+
+```bash
+time_func() {
+    while true; do
+        printf "\r%s" "$(date +'%Y-%m-%d %H:%M:%S')"
+        sleep 1
+    done
+}
+```
+
+Berikut merupakan output dari function time : 
+
+![image](https://github.com/user-attachments/assets/adfbb792-7b17-4b9c-bda8-d2e8b73f11fd)
+
+### REVISI
+
+Sebagai syarat penambahan nilai, desain artistik dari function ini akan ditambahkan 
+
+```bash
+time_func() {
+    tput civis
+    trap 'tput cnorm' EXIT
+    
+    while true; do
+        
+        cols=$(tput cols)
+        rows=$(tput lines)
+        
+        
+        time_str=$(date +'%H:%M:%S')
+        date_str=$(date +'%Y-%m-%d')
+        combined="${date_str} ${time_str}"
+        
+       
+        half_width=$(( (${#combined} + 2) / 2 ))
+        pos_x=$(( (cols / 2) - half_width + 1 ))
+        pos_y=$(( rows / 2 ))
+        
+        
+        border=$(printf '═%.0s' $(seq 1 $((${#combined} + 2))))
+        
+        
+        tput cup $((pos_y - 1)) $((pos_x - 1))
+        echo -ne "\e[1;36m╔${border}╗\e[0m"
+        
+        tput cup $pos_y $((pos_x - 1))
+        echo -ne "\e[36m║ \e[1;33m${date_str} \e[35m${time_str} \e[36m║\e[0m"
+        
+        tput cup $((pos_y + 1)) $((pos_x - 1))
+        echo -ne "\e[1;36m╚${border}╝\e[0m"
+        
+        sleep 1
+    done
+}
+```
+Output revisi :
+
+![image](https://github.com/user-attachments/assets/3f414144-31a9-4278-a74e-ee8be39adbc5)
+
+### d. Money 
+
+Soal ini akan memmbuat praktikan untuk menampilkan simbol uang yang akan muncul di layar secara acak, kode dari shell adalah sebagai berikut : 
+
+```bash
+money() {
+    chars=('$' '€' '£' '¥' '¢' '₹' '₩' '₿' '₣')
+    while true; do
+        cols=$(tput cols)
+        rows=$(tput lines)
+        col=$((RANDOM % cols))
+        row=$((RANDOM % rows))
+        tput cup $row $col
+        echo -ne "\e[1;32m${chars[$RANDOM % 9]}\e[0m"
+        sleep 0.05   
+done
+}
+```
+
+Untuk output dari soal diatas adalah sebagai berikut : 
+
+![image](https://github.com/user-attachments/assets/9f434628-f622-44ef-a1e2-4929f257c44d)
+
+### e. Brain Damage
+
+Singkatnya para praktikan diharuskan untuk membuat function dimana isi dari funciton tersebut akan menampilkan task manager dari sebuah terminal, berikut adalah kode dari soal tersebut : 
+
+```bash
+brain_damage() {
+    top -b -d 1
+}
+```
+
+output : 
+
+![image](https://github.com/user-attachments/assets/e35f8b89-c104-4d13-928f-cbcea27bfee3)
+
+### REVISI
+
+untuk mendapatkan nilai artistik yang lebih baik, berikut merupakan revisi dari kode brain damage : 
+
+```bash
+brain_damage() {
+    top -b -d 1
+}
+```
+
+Output :
+
+
 
 ### Soal 4
 A. Melihat summary dari data untuk mengetahui Pokemon apa yang sedang membawa teror kepada lingkungan “Generation 9 OverUsed”
