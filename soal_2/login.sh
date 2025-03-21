@@ -24,7 +24,7 @@ hashed_password=$(echo -n "$password$SALT" | sha256sum | awk '{print $1}')
 
 if grep -q "^$email,.*,$hashed_password$" "$file_database"; then
     echo "Login berhasil!"
-    ./scripts/terminal.sh  # Lanjut ke menu utama
+    ./terminal.sh  
 else
     echo "Email atau password tidak sesuai."
     exit 1
