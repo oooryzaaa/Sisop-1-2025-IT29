@@ -215,7 +215,127 @@ echo "Genre paling popoler di Asia setelah tahun 2023 adalah $genre_popular"
 ![image](https://github.com/user-attachments/assets/c75e71d7-97b3-48bc-b4b5-26fda0a86477)
 
 ### Soal 2
-   
+Diberi petunjuk untuk membuat sistem yang akan mendata "player" dengan beberapa fitur seperti login, register, serta pengecekan CPU dan RAM.
+
+### membuat script login dan register
+Dengan parameter pada register berupa login, username dan password. kemudian pada login memiliki parameter login dan password saja.
+
+```bash
+if ! [[ "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    echo "Error: email tidak sesuai format."
+    exit 1
+fi
+
+if ! [[ ${#password} -ge 8 && "$password" =~ [A-Z] && "$password" =~ [a-z] && "$password" =~ [0-9] ]]; then
+    echo "Error: Format password harus minimal 8 karakter dengan 1 huruf kecil, 1 huruf besar, dan satu angka."
+    exit 1
+fi
+```
+Sebagai bentuk validasi pada email (harus memiliki format '@' dan '.') kemudian password (setidaknya 8 karakter dengan minimal 1 huruf besar, 1 huruf kecil dan 1 angka) jika tidak memenuhi maka akan muncul pemberitahuan tidak seusai format.
+
+```bash
+if awk -F',' -v e="$email" '$1 == e {found=1; exit} END {exit !found}' "$file_database"; then
+    echo "Email sudah terdaftar! Silakan gunakan email lain."
+    exit 1
+fi
+```
+Agar mencegah terjadinya duplikasi pada email maka apabila ditemukan email yang sama pada database, otomatis sistem akan kembali ke menu dengan pemberitahuan email sudah terdaftar.
+
+```bash
+SALT="C4sPL0ck"
+hashed_password=$(echo -n "$password$SALT" | sha256sum | awk '{print $1}')
+echo "$email,,$hashed_password" >> "$file_database"
+```
+Dengan kode salt "C4sPL0ck" lalu diolah dalam algoritma hashing yang akan membuat password menjadi bentuk tidak mudah diakses.
+![image](https://github.com/user-attachments/assets/89a8ae09-d344-492f-b20c-d8edd8dafbea)
+
+### REVISI
+### Pengecekan CPU
+```bash
+cpu_usage() {
+    cpu_usage=$(cat <(grep 'cpu ' /proc/stat) <(sleep 1 && grep 'cpu ' /proc/stat) |
+        awk -v RS="" '{printf "%.2f", ($13-$2+$15-$4)*100/($13-$2+$15-$4+$16-$5)}')
+
+    if [[ -z "$cpu_usage" || "$cpu_usage" == "0.00" ]]; then
+        cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}')
+    fi
+
+    echo "$cpu_usage"
+}
+
+cpu_usage=$(cpu_usage)
+
+cpu_model=$(grep "model name" /proc/cpuinfo | head -1 | cut -d ":" -f2 | xargs)
+
+log_file="logs/core.log"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] - Core Usage [$cpu_usage%] - Terminal Model [$cpu_model]" >> "$log_file"
+```
+Dengan mengambil data penggunaan CPU menggunakan '/proc/stat' dan membacanya dalam kurun waktu 1 detik lalu dihitung persentase penggunaan CPU sistem. jika tahap pertama gagal atau outputnya kosong maka akan berpindah ke perintah 'top'. lalu diambil informasi paling atas 'head -1' dan akan di catat di '$log_file'
+![image](https://github.com/user-attachments/assets/42303c5c-40e9-401a-9df8-76a64058e1a1)
+
+### Pengecekan RAM
+```bash
+ram_usage() {
+    total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+
+    total_ram_mb=$((total_ram_kb / 1024))
+    available_ram_mb=$((available_ram_kb / 1024))
+
+    used_ram_mb=$((total_ram_mb - available_ram_mb))
+
+    ram_usage=$(echo "scale=2; $used_ram_mb * 100 / $total_ram_mb" | bc)
+
+    echo "$ram_usage,$used_ram_mb,$total_ram_mb,$available_ram_mb"
+}
+```
+RAM akan dihitung dalam totalan ukuran Kb kemudian mengkonversikan menjadi Mb dan RAM yang digunakan itu didapatkan dari total RAM dikurang kan dengan RAM yang masih tersedia
+![image](https://github.com/user-attachments/assets/86581c8b-0f04-4037-9252-3bacac7e1cfc)
+
+```bash
+add_cron() {
+    local task="$1"
+    local interval="$2"
+    local log_file="$3"
+    local schedule="*/$interval * * * * $task >> $log_file 2>&1"
+    (crontab -l; echo "$schedule") | crontab -
+    echo "Job added to crontab with interval $interval minutes! Logs will be saved to $log_file."
+}
+remove_cron() {
+    local task="$1"
+    crontab -l | grep -v "$task" | crontab -
+    echo "Job removed from crontab!"
+}
+view_jobs() {
+    crontab -l
+}
+read_option() {
+    while true; do
+        read -p "Enter option [1-6]: " option
+        if [[ "$option" =~ ^[1-6]$ ]]; then
+            break
+        else
+            echo "Invalid option! Please enter a number between 1 and 6."
+        fi
+    done
+}
+```
+Terdaot fungsi untuk menambahkan cron job, menghapus corn job, serta menampilkan isi dari cron job tersebut. kemudian apabila saat memilih option diluar dari opsi maka akan terjadi error.
+![image](https://github.com/user-attachments/assets/1698a3a8-f125-47d4-81c1-8852b4c419ef)
+![image](https://github.com/user-attachments/assets/3bee80c4-96c2-4e84-84d0-9728570e3859)
+
+### sebagai log yang akan menyimpan data dari cron tab
+'core.log'
+![image](https://github.com/user-attachments/assets/0e79ac9e-718e-4053-95f7-d66d9cf47815)
+'fragment.log'
+![image](https://github.com/user-attachments/assets/fe774322-f246-4d3b-b712-d3a6c422680f)
+
+### Terminal dalam sistem ini
+![image](https://github.com/user-attachments/assets/b974765b-8a81-484f-a07b-a28ea245e503)
+![image](https://github.com/user-attachments/assets/fc75883d-4c99-4137-a564-8dc89cbb3e0f)
+![image](https://github.com/user-attachments/assets/68d529ec-4ec8-42af-b97c-37ff525152ab)
+Diawali dengan melakukan registrasi dan melakukan login kemudian akan berpindah pada Crontab Manager dan kita dapat menambahkan dan menghapus cronjob pada sistem ini
+
 ### Soal 3
 
 ### a. Speak To me
